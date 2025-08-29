@@ -1,107 +1,109 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { useRates } from "./hooks/useRates";
+import CurrencySelector from "./components/CurrencySelector";
+import AmountInput from "./components/AmountInput";
+import ConversionResult from "./components/ConversionResult";
+import ErrorBanner from "./components/ErrorBanner";
 
 export default function App() {
-  const [amount, setAmount] = useState(1);
+  // UI state
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR");
-  const [rate, setRate] = useState(null);
-  const [result, setResult] = useState(null);
+  const [amount, setAmount] = useState("1");
 
-  useEffect(() => {
-    if (fromCurrency && toCurrency) {
-      fetch(`https://open.er-api.com/v6/latest/${fromCurrency}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.rates) {
-            setRate(data.rates[toCurrency]);
-          }
-        });
-    }
-  }, [fromCurrency, toCurrency]);
+  // Data state
+  const { rates, updatedAt, loading, err } = useRates(fromCurrency);
 
-  const convert = () => {
-    if (rate) {
-      setResult((amount * rate).toFixed(2));
-    }
-  };
+  const currencyList = useMemo(() => (rates ? Object.keys(rates).sort() : []), [rates]);
+  const rate = useMemo(() => (rates && toCurrency ? rates[toCurrency] : null), [rates, toCurrency]);
+
+  const canConvert = !!rate && amount !== "" && Number(amount) >= 0;
+
+  function swap() {
+    setFromCurrency(toCurrency);
+    setToCurrency(fromCurrency);
+  }
+
+  function retry() {
+    setFromCurrency((prev) => prev); // no-op to keep UX; user can also change base
+    // A simple trick: toggle to force re-render if needed
+    // but generally changing fromCurrency is enough to refetch.
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-sky-100 via-white to-sky-200 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl p-6">
-        <h1 className="text-2xl font-bold text-center text-sky-700 mb-6">
-          🌍 Currency Converter
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-gray-900 dark:text-gray-100">
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight">
+            🌍 Currency Converter
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Live exchange rates with a clean, responsive UI.
+          </p>
+        </header>
 
-        <div className="space-y-4">
-          {/* Amount Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Amount
-            </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-            />
+        <div className="rounded-3xl bg-white/80 backdrop-blur border border-gray-200 shadow-xl p-6 dark:bg-gray-900/70 dark:border-gray-800">
+          {/* Inputs */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <AmountInput value={amount} onChange={setAmount} />
+
+            <div className="grid grid-cols-1 gap-4">
+              <CurrencySelector
+                id="from"
+                label="From"
+                value={fromCurrency}
+                onChange={setFromCurrency}
+                options={currencyList}
+              />
+              <CurrencySelector
+                id="to"
+                label="To"
+                value={toCurrency}
+                onChange={setToCurrency}
+                options={currencyList}
+              />
+            </div>
           </div>
 
-          {/* From Currency */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              From
-            </label>
-            <select
-              value={fromCurrency}
-              onChange={(e) => setFromCurrency(e.target.value)}
-              className="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+          {/* Actions */}
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              onClick={swap}
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white text-sm font-medium hover:bg-sky-700 active:scale-[0.99]"
+              disabled={!rates}
+              title="Swap currencies"
             >
-              <option>USD</option>
-              <option>EUR</option>
-              <option>GBP</option>
-              <option>JPY</option>
-            </select>
-          </div>
+              ⇄ Swap
+            </button>
 
-          {/* To Currency */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              To
-            </label>
-            <select
-              value={toCurrency}
-              onChange={(e) => setToCurrency(e.target.value)}
-              className="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-            >
-              <option>USD</option>
-              <option>EUR</option>
-              <option>GBP</option>
-              <option>JPY</option>
-            </select>
-          </div>
-
-          {/* Convert Button */}
-          <button
-            onClick={convert}
-            className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 rounded-lg transition-colors"
-          >
-            Convert
-          </button>
-
-          {/* Result */}
-          {result && (
-            <div className="text-center mt-4 p-4 bg-sky-50 border border-sky-200 rounded-lg">
-              <p className="text-lg font-semibold text-sky-700">
-                {amount} {fromCurrency} = {result} {toCurrency}
-              </p>
-              {rate && (
-                <p className="text-sm text-gray-600">
-                  1 {fromCurrency} = {rate.toFixed(4)} {toCurrency}
-                </p>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              {loading && "Fetching rates…"}
+              {!loading && updatedAt && (
+                <>Last update: <span className="font-medium">{updatedAt}</span></>
               )}
             </div>
-          )}
+          </div>
+
+          {/* Errors */}
+          {err && <div className="mt-4"><ErrorBanner msg={err} onRetry={retry} /></div>}
+
+          {/* Result */}
+          <div className="mt-6">
+            {canConvert && (
+              <ConversionResult
+                amount={amount}
+                from={fromCurrency}
+                to={toCurrency}
+                rate={rate}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Footer note */}
+        <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-500">
+          Source: open.er-api.com • No API key required
+        </p>
       </div>
     </div>
   );
