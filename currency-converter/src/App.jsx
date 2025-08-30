@@ -209,7 +209,7 @@ export default function App() {
               <span className="block bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">Exchange</span>
             </h2>
             <p className="mt-6 max-w-3xl mx-auto text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
-              Professional-grade currency conversion with live exchange rates, elegant design, and lightning-fast performance.
+              currency conversion with live exchange rates
             </p>
           </div>
 
@@ -243,7 +243,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    {/* Swap Button */}
+                     {/* Swap Button */}
                     <div className="flex items-end justify-center">
                         <button
                         onClick={swap}
@@ -251,7 +251,9 @@ export default function App() {
                         disabled={!rates}
                         title="Swap currencies"
                         >
-                        <svg className="w-5 h-5 transition-transform group-hover:rotate-180 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                        <span className="text-lg font-bold transition-transform group-hover:rotate-180 duration-300">
+                          ⇄
+                        </span>
                         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-30 blur transition-opacity duration-300"></div>
                         </button>
                     </div>
