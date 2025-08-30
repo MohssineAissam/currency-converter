@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 
-// A mapping of common currency codes to their flag emojis for a better visual experience.
 const CURRENCY_FLAGS = {
   USD: '🇺🇸', EUR: '🇪🇺', JPY: '🇯🇵', GBP: '🇬🇧', AUD: '🇦🇺', CAD: '🇨🇦',
   CHF: '🇨🇭', CNY: '🇨🇳', HKD: '🇭🇰', NZD: '🇳🇿', SEK: '🇸🇪', KRW: '🇰🇷',
@@ -10,13 +9,6 @@ const CURRENCY_FLAGS = {
   AED: '🇦🇪', COP: '🇨🇴', SAR: '🇸🇦', MYR: '🇲🇾', RON: '🇷🇴',
 };
 
-/**
- * Custom Hook: useRates
- * This hook fetches and manages currency exchange rate data from a public API.
- * It handles loading and error states, and provides a refetch function.
- * @param {string} baseCurrency - The currency to fetch rates against.
- * @returns {object} - { rates, updatedAt, loading, err, refetch }
- */
 const useRates = (baseCurrency) => {
   const [rates, setRates] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
@@ -46,7 +38,7 @@ const useRates = (baseCurrency) => {
     } catch (e) {
       console.error("Fetch error:", e);
       setErr(e.message || "Could not fetch exchange rates.");
-      setRates(null); // Clear stale rates on error
+      setRates(null);
     } finally {
       setLoading(false);
     }
@@ -59,10 +51,6 @@ const useRates = (baseCurrency) => {
   return { rates, updatedAt, loading, err, refetch: fetchRates };
 };
 
-/**
- * Component: CurrencySelector
- * A styled dropdown for selecting a currency, with optional flag emojis.
- */
 const CurrencySelector = ({ id, value, onChange, options }) => {
   return (
     <select
@@ -80,14 +68,9 @@ const CurrencySelector = ({ id, value, onChange, options }) => {
   );
 };
 
-/**
- * Component: AmountInput
- * A styled input that only accepts numeric values.
- */
 const AmountInput = ({ value, onChange }) => {
   const handleChange = (e) => {
     const { value: inputValue } = e.target;
-    // Regex to allow only numbers and a single decimal point
     if (/^\d*\.?\d*$/.test(inputValue)) {
       onChange(inputValue);
     }
@@ -103,15 +86,11 @@ const AmountInput = ({ value, onChange }) => {
   );
 };
 
-/**
- * Component: ConversionResult
- * Displays the formatted result of the currency conversion.
- */
 const ConversionResult = ({ amount, from, to, rate }) => {
   const convertedAmount = useMemo(() => parseFloat(amount) * rate, [amount, rate]);
   const inverseRate = useMemo(() => 1 / rate, [rate]);
 
-  // Use Intl.NumberFormat for robust currency formatting
+
   const formattedResult = useMemo(() => {
     return new Intl.NumberFormat('en-US', {
       style: 'decimal',
@@ -137,10 +116,6 @@ const ConversionResult = ({ amount, from, to, rate }) => {
   );
 };
 
-/**
- * Component: ErrorBanner
- * A banner to display fetching errors with a retry button.
- */
 const ErrorBanner = ({ msg, onRetry }) => {
   return (
     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl flex items-center justify-between shadow-md">
@@ -155,37 +130,28 @@ const ErrorBanner = ({ msg, onRetry }) => {
   );
 };
 
-/**
- * Main Application Component
- */
 export default function App() {
-  // UI state
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR");
   const [amount, setAmount] = useState("1");
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Data state from our custom hook
   const { rates, updatedAt, loading, err, refetch } = useRates(fromCurrency);
   
-  // Memoized derived state
   const currencyList = useMemo(() => (rates ? Object.keys(rates).sort() : []), [rates]);
   const rate = useMemo(() => (rates && toCurrency ? rates[toCurrency] : null), [rates, toCurrency]);
   const canConvert = !!rate && amount !== "" && Number(amount) >= 0;
 
-  // Effect to toggle dark mode class on the document
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
-  // Handler functions
   const swap = () => {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
   };
   
   const handleAmountChange = (newAmount) => {
-    // Ensure amount doesn't start with multiple zeros or just a dot
     if (newAmount === '.' || (newAmount.startsWith('0') && newAmount.length > 1 && newAmount[1] !== '.')) {
        setAmount(parseFloat(newAmount).toString());
     } else {
